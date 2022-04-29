@@ -7,7 +7,7 @@
 
 We recommend using conda to get the python packages:
 ```
-conda env create -f reqs.yaml -n <name_of_environment>
+conda env create -f environment.yml -n <name_of_environment>
 ```
 
 
