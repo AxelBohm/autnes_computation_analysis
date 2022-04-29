@@ -1,0 +1,23 @@
+name: autnes-analysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - autopep8
+  - graphviz
+  - imbalanced-learn=0.9.0
+  - ipython_genutils=0.2.0
+  - jupyter
+  - matplotlib=3.5.1
+  - numpy-base=1.21.5
+  - pandas
+  - pip=21.2.4
+  - pivottablejs
+  - plotly
+  - pydot
+  - scikit-fuzzy=0.4.2
+  - scikit-learn=1.0.2
+  - scipy
+  - seaborn=0.11.2
+  - pip:
+    - pydataverse==0.3.1

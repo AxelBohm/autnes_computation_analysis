@@ -1,5 +1,13 @@
 # politics-nonresponse
 
+
+# Get the data
+
+We recommend using conda to get necessary python packages:
+```
+conda env create -f reqs.yaml -n <name_of_environment>
+```
+
 # Contents
 - [Sections](#sections)
   * [1. Predicting attrition](#1-predicting-attrition)
