@@ -28,8 +28,8 @@ def import_data(wave):
     """brings 2 dataframes with all the features and series with y (panelpat)"""
     # we predict particular wave attrition based on previous one, therefore we subtract 1 from wave number
     wave = str(int(wave) - 1)
-    political = pd.read_csv(f'../../../data/processed/data_online_political_w{wave}.csv')
-    personal = pd.read_csv(f'../../../data/processed/data_online_personal_w{wave}.csv')
+    political = pd.read_csv(f'../../data/processed/data_online_political_w{wave}.csv')
+    personal = pd.read_csv(f'../../data/processed/data_online_personal_w{wave}.csv')
     y = personal['panelpat']
     personal.drop(['panelpat', 'age_group -sd2x2'], axis=1, inplace=True)
     political.drop(['panelpat'], axis=1, inplace=True)
