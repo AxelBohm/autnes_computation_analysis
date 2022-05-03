@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""
-def get_ordinal_numeric_names():
-
-    dict = {}
-    
-    return dict
-"""
-
 def get_ordinal_names():
 
     dict_ord = {'sd11': 'JOB SITUATION -sd11',

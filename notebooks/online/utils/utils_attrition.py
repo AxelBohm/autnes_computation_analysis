@@ -13,14 +13,9 @@ warnings.filterwarnings('ignore')
 from pivottablejs import pivot_ui
 from IPython.core.display import HTML
 from itertools import repeat
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from ipywidgets import interact
-from sklearn.model_selection import cross_val_predict, train_test_split, GridSearchCV
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.svm import LinearSVC, SVC
+from sklearn.model_selection import cross_val_predict
 from sklearn.preprocessing import MinMaxScaler, StandardScaler 
 from sklearn.metrics import confusion_matrix, recall_score, precision_score, accuracy_score
 
@@ -36,10 +31,9 @@ def import_data(wave):
     political = pd.read_csv(f'../../../data/processed/data_online_political_w{wave}.csv')
     personal = pd.read_csv(f'../../../data/processed/data_online_personal_w{wave}.csv')
     y = personal['panelpat']
-    rate_waves_completed = personal['rate_waves_completed']
-    personal.drop(['panelpat', 'age_group -sd2x2', 'rate_waves_completed'], axis=1, inplace=True)
-    political.drop(['panelpat', 'rate_waves_completed'], axis=1, inplace=True)
-    return personal, political, y, rate_waves_completed
+    personal.drop(['panelpat', 'age_group -sd2x2'], axis=1, inplace=True)
+    political.drop(['panelpat'], axis=1, inplace=True)
+    return personal, political, y
 
 
 def get_metrics(X, y_true, clf):
@@ -53,7 +47,7 @@ def get_metrics(X, y_true, clf):
 
 # df to store all the performance metrics we use (we use it to plot results then)
 metrics_index = ['Recall', 'Precision', 'Accuracy', 'Model']*2
-performance = pd.DataFrame(index=metrics_index)
+#performance = pd.DataFrame(index=metrics_index)
 
 
 def store_data_for_table(performance, X_train, y_train, X_test, y_test, clf):
