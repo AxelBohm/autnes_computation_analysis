@@ -9,6 +9,7 @@ import skfuzzy as fuzz
 from itertools import groupby
 from collections import Counter
 from dictionaries_rename import *
+from PIL import Image
 
 
 #-------------------------PLOTTING-------------------------#
@@ -138,8 +139,135 @@ def real_or_nan(wave):
     dict_ord = get_ordinal_names()
     plt.title(f'{dict_ord.get(questions.get(wave))} distribution')
     df_init[questions.get(wave)].value_counts(dropna=False).plot(kind='barh')
+
+def plot_clusters(wave, clusters, left_right):
+    """Shows plots with samples distribution among clusters with left-right and party-choice coloring"""
+    real_or_nan(wave)
+    left_right_image = Image.open(
+        f"../../../figures/clustering_plots/{left_right[wave].columns[0]}, wave {wave}, {clusters} clusters.png"
+    )
+    left_right_image = left_right_image.resize((800, 600))
+    display(left_right_image)
+    if wave in {"1", "2", "3", "4"}:
+        party_choice_image = Image.open(
+            f"../../../figures/clustering_plots/Party choice (prospective), wave {wave}, {clusters} clusters.png"
+        )
+        party_choice_image = party_choice_image.resize((800, 600))
+        display(party_choice_image)
+        
+def plot_stability(include, exclude_wave_6, df_clustered, df_close):
+    """bar plot with mean cluster labels"""
+    n_samples = df_clustered.shape[0]
+    if exclude_wave_6 == True:
+        df_clustered_ = df_clustered.drop(["Label w6"], axis=1)
+        df_close_ = df_close.drop(["Label w6"], axis=1)
+        if include == "always closely located samples":
+            plot_mean_label(
+                df_close_,
+                "Label among clusters (close to centroids during waves 1-5)",
+                n_samples,
+            )
+        else:
+            df_clustered["Times"] = df_clustered_.filter(like="Close", axis=1).sum(
+                axis=1
+            )
+            df_clustered_ = df_clustered_.loc[df_clustered["Times"] >= 1]
+            plot_mean_label(
+                df_clustered_,
+                "Label among clusters (close to centroids at least once during waves 1-5)",
+                n_samples,
+            )
+    else:
+        if include == "always closely located samples":
+            plot_mean_label(
+                df_close,
+                "Label among clusters (close to centroids during all waves of participation)",
+                n_samples,
+            )
+        else:
+            plot_mean_label(
+                df_clustered,
+                "Label among clusters (close to centroids at least once during all waves of participation)",
+                n_samples,
+            )
     
+def plot_deviations(opinion_deviations):
+    font_color = "#525252"
+    csfont = {"fontname": "Calibri"}  # title font
+    hfont = {"fontname": "Calibri"}  # main font
+
+    ax = opinion_deviations.T.plot.barh(
+        align="center", stacked=True, figsize=(15, 20)
+    ) 
+    plt.tight_layout()
+
+    title = plt.title(
+        "Deviations in opinions", pad=60, fontsize=18, color=font_color, **csfont
+    )
+
+    # Adjust the subplot so that the title would fit
+    plt.subplots_adjust(top=0.8, left=0.26)
+
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(15)
+    plt.xticks(color=font_color, **hfont)
+    plt.yticks(color=font_color, **hfont)
+
+    legend = plt.legend(
+        loc="center",
+        frameon=False,
+        bbox_to_anchor=(0.0, 0.97, 1.0, 0.102),
+        mode="expand",
+        ncol=6,
+        borderaxespad=-0.46,
+        prop={"size": 15, "family": "Calibri"},
+    )
+
+    for text in legend.get_texts():
+        plt.setp(text, color=font_color)  # legend font color
+
+    for p in ax.patches:
+        width, height = p.get_width(), p.get_height()
+        x, y = p.get_xy()
+        ax.text(
+            x + width / 2,
+            y + height / 2,
+            "{:.0f}".format(width),
+            horizontalalignment="center",
+            verticalalignment="center",
+            color="white",
+            fontsize=13,
+            **hfont
+        )
+    title = "Deviations in opinions"
+    save_fig(title)
     
+def individual_check(df_clustered, waves):
+    """Heatmap showing individual labels assignment"""
+    df_clustered_close = df_clustered.copy()
+    # filtering 'confidently' clusteres samples (if they participated in all waves and always were close to centroids)
+    for wave in waves:
+        df_clustered_close = df_clustered_close.loc[
+            df_clustered_close[f"Close to centroid w{wave}"] == 1
+        ]
+
+    f, ax = plt.subplots(figsize=(25, 5))
+    # Define colors
+    colors = ["midnightblue", "mediumspringgreen"]
+    cmap = LinearSegmentedColormap.from_list("Custom", colors, len(colors))
+    df_labels = df_clustered_close.filter(like="Label", axis=1)
+    df_labels["mean_label"] = df_labels.mean(axis=1)
+    df_labels.sort_values(by="mean_label", ascending=False, inplace=True)
+    df_labels.drop(columns=["mean_label"], inplace=True)
+    ax = sns.heatmap(df_labels.T, cmap=cmap)
+    # Set the colorbar labels
+    colorbar = ax.collections[0].colorbar
+    colorbar.set_ticks([0.25, 0.75])
+    colorbar.set_ticklabels(["0", "1"])
+    title = "Consistency of cluster assignments"
+    plt.title(title, fontsize=15)
+    save_fig(title)
+
 #-------------------------DATA MANIPULATION-------------------------#
 def prettify_feature_names(df):
     """Get rid of OPINION tag and feature codes for printing due to space constraints"""
@@ -192,7 +320,57 @@ def back_from_dummies(df):
 
     return pd.DataFrame(result_series)
 
+def store_results(df, explained_variance, eigenvectors, strongest_differences, wave):
+    """store the results in the nested dict"""
+    clustering_info = {}
+    clustering_info[f"Table 1. Explained variance, wave {wave}"] = explained_variance
+    clustering_info[
+        f"Table 2. Important features (PCA), 1 component, wave {wave}"
+    ] = sort_by_absolute_val(eigenvectors, "Eigenvector 1")["Eigenvector 1"].to_frame()
+    clustering_info[
+        f"Table 3. Important features (PCA), 2 component, wave {wave}"
+    ] = sort_by_absolute_val(eigenvectors, "Eigenvector 2")["Eigenvector 2"].to_frame()
+    clustering_info[
+        f"Table 4. The most important factors regarding differences between clusters (1 minus 0), wave {wave}"
+    ] = strongest_differences
+    return clustering_info
 
+def show_features(wave, clusters, results_2, results_4):
+    """Show explained variance, features, forming eigenvectors and those having the largest differences between clusters"""
+    if clusters == 2:
+        # looping over nested dicts
+        wave_dict = results_2[wave]
+        for key, values in wave_dict.items():
+            for key_, values_ in values.items():
+                display(values_[:5].style.set_caption(key_))
+
+    else:
+        # looping over nested dicts
+        wave_dict = results_4[wave]
+        for key, values in wave_dict.items():
+            for key_, values_ in values.items():
+                if (
+                    key_
+                    == f"Table 4. The most important factors regarding differences between clusters (1 minus 0), wave {wave}"
+                ):
+                    for key__, values__ in values_.items():
+                        display(
+                            values__.style.set_properties(
+                                **{"background-color": "#000066", "color": "white"},
+                                subset=[f"mean_{key__}"],
+                            )
+                        )
+                else:
+                    display(values_[:5].style.set_caption(key_))
+
+def delete_unique(cols_names):
+    """Returns duplicated elements from list as we want only repeated questions"""
+    duplicated_cols = [
+        question for question in cols_names if cols_names.count(question) > 1
+    ]
+    duplicated_cols = list(dict.fromkeys(duplicated_cols))
+    return duplicated_cols
+                    
 
 #-------------------------CLUSTERS MANIPULATION-------------------------#
 def compare_4_clusters(df, wave):
