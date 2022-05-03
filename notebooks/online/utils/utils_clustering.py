@@ -134,7 +134,7 @@ def real_or_nan(wave):
     (for instance, if we have many values equal to 5 in self left-right placement, does that mean, that many people put themselves
     to the center? Or maybe that big number of center values was obtained artificially?),
     therefore we plot distribution of value counts for feature plotted"""
-    df_init = pd.read_csv('../../../data/10017_da_en_v2_0.tab', sep='\t')
+    df_init = pd.read_csv('../../../data/raw/10017_da_en_v2_0.tab', sep='\t')
     questions = {'1': 'w1_q9', '2': 'w2_q35x2', '3': 'w3_q40x2', '4': 'w4_q40x2', '5': 'w5_q6', '6': 'w6f_q13'}
     dict_ord = get_ordinal_names()
     plt.title(f'{dict_ord.get(questions.get(wave))} distribution')
